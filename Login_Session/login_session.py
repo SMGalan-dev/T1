@@ -27,31 +27,38 @@ def login():
             output = 'Invalid name/password combination'
 
     else:
-        output = 'Invalid name/password combination'
+        output = 'The username doesnt exist'
 
-    return jsonify({'result' : output})
+    return jsonify({'login' : output})
 
 
-@app.route('/register', methods=['POST', 'GET'])
+@app.route('/register', methods=['POST'])
 def register():
-    if request.method == 'POST':
-        users = mongo.db.users
-        existing_user = users.find_one({'name' : request.json['name']})
+    users = mongo.db.users
+    existing_user = users.find_one({'name' : request.json['name']})
 
-        if existing_user is None:
-            user_id = users.insert({'name' : request.json['name'], 'password' : request.json['password']})
-            new_user = users.find_one({'_id' : user_id})
-            output = {'name' : new_user['name']}    
-        else:
-            output = 'That username already exists'  
+    if existing_user is None:
+        user_id = users.insert({'name' : request.json['name'], 'password' : request.json['password']})
+        new_user = users.find_one({'_id' : user_id})
+        output = {'name' : new_user['name']}    
+    else:
+        output = 'That username already exists'  
 
-    else: #Show all data, NOT USED
-        users = mongo.db.users 
-        output = []
-        for q in users.find():
-            output.append({'name' : q['name'], 'password' : q['password']})
+    return jsonify({'register' : output})
 
-    return jsonify({'result' : output})
+@app.route('/delete/<string:name>', methods=['DELETE'])
+def remove_one(name):
+    users = mongo.db.users
+    delete_user = users.find_one({'name' : name})
+
+    if delete_user is None:
+        output = 'That username doesnt exists' 
+    else: 
+        users.remove(delete_user)
+        output = {'name' : delete_user['name']}
+
+    return jsonify({'deleted' : output})
+    #return "Deleted: {} \n".format(delete_user)
 
 if __name__ == '__main__':
     app.secret_key = 'mysecret'
